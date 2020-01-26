@@ -1,4 +1,4 @@
-Temper Assessment
+OneFit Assessment
 ===============
 
 ## Installation
@@ -17,6 +17,3 @@ cd docker/ && docker-compose up -d --build
 ```bash
 vendor/bin/phpunit -c phpunit.xml
 ```
-
-## Result
-![Image description](https://i.ibb.co/Gc8S3s3/Screenshot-2020-01-13-at-17-53-53.png)
