@@ -3,10 +3,12 @@
 namespace  App\Service;
 
 use App\Model\Participant;
+use App\Model\Participants;
 use App\Model\Program;
 
 class Wod
 {
+    private const BREAK_CODE = 'BREAK';
     /** @var Participant[] $participants */
     private $participants;
     /** @var array $exercises */
@@ -19,7 +21,7 @@ class Wod
         'U002',
         'C002',
         'H001',
-        'C003'
+        'C003',
     ];
     /** @var array $descriptions */
     private $descriptions = [
@@ -32,7 +34,7 @@ class Wod
         'C002' => 'Short sprints',
         'H001' => 'Handstand practice',
         'C003' => 'Jumping rope',
-        'BREAK' => 'Take a break'
+        self::BREAK_CODE => 'Take a break',
     ];
     /** @var int $maximumExercise */
     private $maximumExercise = 30;
@@ -41,128 +43,43 @@ class Wod
 
     /**
      * Wod constructor.
-     * @param Participant[] $participants
+     * @param Participants $participants
      */
-    public function __construct(array $participants)
+    public function __construct(Participants $participants)
     {
-        $this->participants = $participants;
+        $this->participants = $participants->getParticipants();
         $this->build();
     }
 
-    private function build()
+    /**
+     * @return int
+     */
+    public function getExerciseLimit(): int
+    {
+        return $this->maximumExercise;
+    }
+
+    /**
+     * @param int $practiseIndex
+     * @return \Generator
+     */
+    public function getParticipantAndExercise(int $practiseIndex): \Generator
+    {
+        foreach ($this->participants as $participant) {
+            yield $participant => $this->getDescription($participant->getProgram()->getPractise($practiseIndex));
+        }
+    }
+
+    private function build(): void
     {
         for ($minute=0; $minute<$this->maximumExercise; $minute++) {
             $this->limitedSpace = 0;
             foreach ($this->participants as $participant) {
-                if (!$this->deserveBreak($participant, $minute)) {
+                if (!$this->isAddedBreak($participant, $minute)) {
                     $this->addPractise($participant);
                 }
             }
         }
-    }
-
-    /**
-     * @param Participant $participant
-     * @param int $step
-     * @return bool
-     */
-    private function deserveBreak(Participant $participant, int $step): bool
-    {
-        /** @var Program $program */
-        $program = $participant->getProgram();
-        if ($step > 0 && $step % ($this->maximumExercise / ($program->getBreak() + 1)) === 0) {
-            $program->addPractise('BREAK');
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @param Participant $participant
-     */
-    private function addPractise(Participant $participant): void
-    {
-        $exercise = $this->randomExercise();
-        /** @var Program $program */
-        $program = $participant->getProgram();
-        if (count($program->getPractises()) > 0) {
-            while (!$this->checkConditions($participant, $exercise)) {
-                $exercise = $this->randomExercise();
-            }
-        }
-
-        $program->addPractise($exercise);
-    }
-
-    /**
-     * @return string
-     */
-    private function randomExercise(): string
-    {
-        return $this->exercises[array_rand($this->exercises)];
-    }
-
-    /**
-     * @param Participant $participant
-     * @param string $code
-     * @return bool
-     */
-    private function checkConditions(Participant $participant, string $code): bool
-    {
-        return $this->checkCardio($participant->getProgram(), $code)
-            && $this->checkHandstand($participant, $code)
-            && $this->checkLimitedSpace($code);
-    }
-
-    /**
-     * @param Program $program
-     * @param string $code
-     * @return bool
-     */
-    private function checkCardio(Program $program, string $code): bool
-    {
-        $practises = $program->getPractises();
-        $lastPractise = end($practises);
-
-        $codeType = $code[0];
-        $lastCodeType = $lastPractise[0];
-
-        if ($codeType === 'C' && $lastCodeType === $code[0]) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param Participant $participant
-     * @param string $code
-     * @return bool
-     */
-    private function checkHandstand(Participant $participant, string $code): bool
-    {
-        if ($participant->isBeginner() && $code === 'H001' && array_search('H001', $participant->getProgram()->getPractises()) > -1) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param string $code
-     * @return bool
-     */
-    private function checkLimitedSpace(string $code): bool
-    {
-        if ($code[0] === 'U') {
-            if ($this->limitedSpace >= 2) {
-                return false;
-            }
-            $this->limitedSpace++;
-        }
-
-        return true;
     }
 
     /**
@@ -174,15 +91,127 @@ class Wod
         return $this->descriptions[$code] ?? '';
     }
 
-    public function output()
+    /**
+     * @param Participant $participant
+     * @param int $step
+     * @return bool
+     */
+    private function isAddedBreak(Participant $participant, int $step): bool
     {
-        for ($i=0; $i<$this->maximumExercise; $i++) {
-            echo sprintf('%02d:00 - %02d:00 - ', $i, $i+1);
-            foreach ($this->participants as $participant) {
-                $exercise = $participant->getProgram()->getPractise($i);
-                echo $participant->getName() . ' will do ' . $this->getDescription($exercise) . ', ';
-            }
-            echo '<br>';
+        /** @var Program $program */
+        $program = $participant->getProgram();
+        if ($this->isDeservedBreak($program, $step)) {
+            $program->addPractise(self::BREAK_CODE);
+            return true;
         }
+
+        return false;
+    }
+
+    /**
+     * @param Program $program
+     * @param int $step
+     * @return bool
+     */
+    private function isDeservedBreak(Program $program, int $step): bool
+    {
+        return $step > 0 && $step % ($this->maximumExercise / ($program->getBreak() + 1)) === 0;
+    }
+
+    /**
+     * @param Participant $participant
+     */
+    private function addPractise(Participant $participant): void
+    {
+        $exercise = $this->getRandomExercise();
+        /** @var Program $program */
+        $program = $participant->getProgram();
+        if (count($program->getPractises()) > 0) {
+            while ($this->isNotMeetingConditions($participant, $exercise)) {
+                $exercise = $this->getRandomExercise();
+            }
+        }
+
+        $program->addPractise($exercise);
+    }
+
+    /**
+     * @return string
+     */
+    private function getRandomExercise(): string
+    {
+        return $this->exercises[array_rand($this->exercises)];
+    }
+
+    /**
+     * @param Participant $participant
+     * @param string $code
+     * @return bool
+     */
+    private function isNotMeetingConditions(Participant $participant, string $code): bool
+    {
+        return $this->isSuccessiveCardio($participant->getProgram(), $code)
+                && $this->hasHandstandBefore($participant, $code)
+                    && $this->isExceedLimitedSpace($code);
+    }
+
+    /**
+     * @param Program $program
+     * @param string $code
+     * @return bool
+     */
+    private function isSuccessiveCardio(Program $program, string $code): bool
+    {
+        $practises = $program->getPractises();
+        $lastPractise = end($practises);
+
+        $codeType = substr($code, 0, 1);
+        $lastCodeType = substr($lastPractise, 0, 1);
+
+        if ($codeType === 'C' && $lastCodeType === $codeType) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Participant $participant
+     * @param string $code
+     * @return bool
+     */
+    private function hasHandstandBefore(Participant $participant, string $code): bool
+    {
+        if ($participant->isBeginner() && $this->isHandstand($participant->getProgram(), $code)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Program $program
+     * @param string $code
+     * @return bool
+     */
+    private function isHandstand(Program $program, string $code): bool
+    {
+        return $code === 'H001' && array_search($code, $program->getPractises()) > -1;
+    }
+
+    /**
+     * @param string $code
+     * @return bool
+     */
+    private function isExceedLimitedSpace(string $code): bool
+    {
+        if (substr($code, 0, 1) === 'U') {
+            if ($this->limitedSpace >= 2) {
+                return true;
+            }
+            $this->limitedSpace++;
+        }
+
+        return false;
     }
 }

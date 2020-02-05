@@ -22,8 +22,7 @@ class Participant
     {
         $this->name = $name;
         $this->isBeginner = $isBeginner;
-        $this->program = new Program();
-        $this->program->setBreak($isBeginner ? 4 : 2);
+        $this->program = new Program($isBeginner);
     }
 
     /**
@@ -55,6 +54,6 @@ class Participant
      */
     public function __toString(): string
     {
-        return $this->name . ' ' . ($this->isBeginner() ? '(beginner)' : '');
+        return $this->name . ($this->isBeginner() ? ' (beginner)' : '');
     }
 }

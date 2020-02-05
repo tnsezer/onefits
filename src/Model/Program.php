@@ -4,22 +4,28 @@ namespace  App\Model;
 
 class Program
 {
+    public const PROFESSIONAL_BREAK = 2;
+    public const BEGINNER_BREAK = 4;
+
     /** @var array $practises */
     private $practises = [];
+
     /** @var int $break */
-    private $break = 2;
+    private $break;
 
     /**
      * Program constructor.
+     * @param bool $isBeginner
      */
-    public function __construct()
+    public function __construct(bool $isBeginner)
     {
+        $this->setBreak($isBeginner ? self::BEGINNER_BREAK : self::PROFESSIONAL_BREAK);
     }
 
     /**
      * @param int $break
      */
-    public function setBreak(int $break): void
+    private function setBreak(int $break): void
     {
         $this->break = $break;
     }
@@ -41,12 +47,12 @@ class Program
     }
 
     /**
-     * @param int $i
+     * @param int $line
      * @return string
      */
-    public function getPractise(int $i): string
+    public function getPractise(int $line): string
     {
-        return $this->practises[$i];
+        return $this->practises[$line];
     }
 
     /**
