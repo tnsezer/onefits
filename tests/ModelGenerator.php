@@ -1,9 +1,8 @@
 <?php
 
-
 namespace Test;
 
-
+use App\Model\Conditions\Condition;
 use App\Model\Exercises\Exercise;
 
 trait ModelGenerator
@@ -24,5 +23,21 @@ trait ModelGenerator
             ->willReturn($code);
 
         return $exerciseClass;
+    }
+
+    /**
+     * @param bool $return
+     * @return Condition
+     */
+    private function createCondition(bool $return): Condition
+    {
+        $conditionClass = $this->getMockBuilder(Condition::class)
+            ->setMethods(['check'])
+            ->getMock();
+
+        $conditionClass->method('check')
+            ->willReturn($return);
+
+        return $conditionClass;
     }
 }
