@@ -3,20 +3,20 @@
 namespace Test\Service;
 
 use App\Model\Participant;
-use App\Model\Participants;
+use App\Model\ParticipantList;
 use PHPUnit\Framework\TestCase;
-use App\Service\Wod;
+use App\Service\WodGenerator;
 
-class WodTest extends TestCase
+class WodGeneratorTest extends TestCase
 {
     private $wod;
 
     public function setUp(): void
     {
-        $participants = new Participants();
-        $participants->add(new Participant('Michael', false));
-        $participants->add(new Participant('Roy', true));
-        $this->wod = new Wod($participants);
+        $participantList = new ParticipantList();
+        $participantList->add(new Participant('Michael', false));
+        $participantList->add(new Participant('Roy', true));
+        $this->wod = new WodGenerator($participantList);
     }
 
     public function testGetExerciseLimit()

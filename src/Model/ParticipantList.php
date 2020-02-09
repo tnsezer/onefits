@@ -2,7 +2,7 @@
 
 namespace App\Model;
 
-class Participants implements \IteratorAggregate
+class ParticipantList implements \IteratorAggregate
 {
     /** @var \ArrayIterator $participants */
     private $participants;
@@ -24,18 +24,10 @@ class Participants implements \IteratorAggregate
     }
 
     /**
-     * @return array
-     */
-    public function getParticipants(): array
-    {
-        return $this->participants->getArrayCopy();
-    }
-
-    /**
      * @inheritDoc
      */
-    public function getIterator()
+    public function getIterator(): array
     {
-        return $this->participants;
+        return $this->participants->getArrayCopy();
     }
 }

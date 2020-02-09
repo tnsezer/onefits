@@ -2,10 +2,12 @@
 
 namespace  App\Model;
 
+use App\Model\Exercises\Exercise;
+
 class Program
 {
-    public const PROFESSIONAL_BREAK = 2;
-    public const BEGINNER_BREAK = 4;
+    private const PROFESSIONAL_BREAK = 2;
+    private const BEGINNER_BREAK = 4;
 
     /** @var array $practises */
     private $practises = [];
@@ -19,15 +21,7 @@ class Program
      */
     public function __construct(bool $isBeginner)
     {
-        $this->setBreak($isBeginner ? self::BEGINNER_BREAK : self::PROFESSIONAL_BREAK);
-    }
-
-    /**
-     * @param int $break
-     */
-    private function setBreak(int $break): void
-    {
-        $this->break = $break;
+        $this->break = $isBeginner ? self::BEGINNER_BREAK : self::PROFESSIONAL_BREAK;
     }
 
     /**
@@ -39,27 +33,35 @@ class Program
     }
 
     /**
-     * @param string $code
+     * @param Exercise $exercise
      */
-    public function addPractise(string $code): void
+    public function addPractise(Exercise $exercise): void
     {
-        $this->practises[] = $code;
+        $this->practises[] = $exercise;
     }
 
     /**
      * @param int $line
-     * @return string
+     * @return Exercise
      */
-    public function getPractise(int $line): string
+    public function getPractise(int $line): Exercise
     {
         return $this->practises[$line];
     }
 
     /**
-     * @return array
+     * @return Exercise[]
      */
     public function getPractises(): array
     {
         return $this->practises;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPractisesCount(): int
+    {
+        return count($this->practises);
     }
 }

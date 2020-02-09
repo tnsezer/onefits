@@ -3,10 +3,10 @@
 require_once '../bootstrap.php';
 
 use App\Model\Participant;
-use App\Model\Participants;
-use App\Service\Wod;
+use App\Model\ParticipantList;
+use App\Service\WodGenerator;
 
-$participants = new Participants();
+$participants = new ParticipantList();
 $participants->add(new Participant('Camille', false));
 $participants->add(new Participant('Michael', false));
 $participants->add(new Participant('Tom', true));
@@ -15,9 +15,9 @@ $participants->add(new Participant('Erik', false));
 $participants->add(new Participant('Lars', false));
 $participants->add(new Participant('Mathijs', true));
 
-$wod = new Wod($participants);
+$wod = new WodGenerator($participants);
 
-echo 'Starting the workout with ' . implode(', ', $participants->getParticipants());
+echo 'Starting the workout with ' . implode(', ', $participants->getIterator());
 echo '<br>';
 for ($i=0; $i<$wod->getExerciseLimit(); $i++) {
     echo sprintf('%02d:00 - %02d:00 - ', $i, $i+1);
